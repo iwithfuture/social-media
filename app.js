@@ -4,6 +4,7 @@ const platforms = [
   { id: "xiaohongshu", name: "小红书", short: "红", limit: 1000, color: "#e11d48", tone: "种草、有标题感" },
   { id: "douyin", name: "抖音", short: "抖", limit: 2200, color: "#111827", tone: "短句、强钩子" },
   { id: "bilibili", name: "B站动态", short: "B", limit: 2000, color: "#0284c7", tone: "社区感、解释清楚" },
+  { id: "zhihu", name: "知乎", short: "知", limit: 5000, color: "#1772f6", tone: "观点清晰、论证充分" },
   { id: "linkedin", name: "LinkedIn", short: "in", limit: 3000, color: "#0a66c2", tone: "专业、业务价值" },
   { id: "x", name: "X / Twitter", short: "X", limit: 280, color: "#18181b", tone: "极简、观点明确" },
   { id: "facebook", name: "Facebook", short: "f", limit: 63206, color: "#2563eb", tone: "亲和、适合互动" },
@@ -701,6 +702,7 @@ function tailorBodyForPlatform(platform, body) {
   if (!trimmed) return "";
   if (platform.id === "x" && trimmed.length > 240) return `${trimmed.slice(0, 236)}...`;
   if (platform.id === "xiaohongshu") return `${trimmed}\n\n适合收藏，也欢迎评论交流。`;
+  if (platform.id === "zhihu") return `${trimmed}\n\n我的看法是：这类工具真正的价值，不只是减少重复发布，而是让内容生产、审核、分发和复盘形成闭环。`;
   if (platform.id === "linkedin") return `${trimmed}\n\n这背后的重点是效率、协作和可衡量的增长。`;
   if (platform.id === "douyin") return `先说结论：${trimmed}`;
   return trimmed;

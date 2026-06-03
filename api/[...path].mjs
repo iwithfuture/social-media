@@ -4,6 +4,7 @@ const defaultAccounts = {
   xiaohongshu: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
   douyin: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
   bilibili: { connected: true, status: "active", accountName: "品牌B站", expiresAt: futureDays(35) },
+  zhihu: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
   linkedin: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
   x: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
   facebook: { connected: false, status: "disconnected", accountName: "", expiresAt: "" },
