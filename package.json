@@ -1,0 +1,11 @@
+{
+  "name": "social-media-publisher",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check app.js && node --check server.mjs && node --check api/[...path].mjs"
+  }
+}
+

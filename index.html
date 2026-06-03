@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>全平台一键发布</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="平台与账号状态">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <h1>全平台发布</h1>
+            <p>统一编辑，按平台优化</p>
+          </div>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>发布平台</h2>
+            <button class="icon-button" id="selectAllButton" type="button" aria-label="选择全部平台" title="选择全部平台">
+              <span aria-hidden="true">✓</span>
+            </button>
+          </div>
+          <div class="platform-list" id="platformList"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>账号连接</h2>
+          </div>
+          <div class="connection-list" id="connectionList"></div>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-label="发布编辑区">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Post Command Center</p>
+            <h2>一键发布到全部社媒平台</h2>
+          </div>
+          <div class="publish-actions">
+            <button class="secondary-button" id="saveDraftButton" type="button">保存草稿</button>
+            <button class="secondary-button" id="createTaskButton" type="button">加入日历</button>
+            <button class="primary-button" id="publishButton" type="button">一键发布</button>
+          </div>
+        </header>
+
+        <nav class="tabs" aria-label="工作区视图">
+          <button class="tab active" type="button" data-view="compose">内容编辑</button>
+          <button class="tab" type="button" data-view="calendar">发布日历</button>
+          <button class="tab" type="button" data-view="analytics">数据概览</button>
+        </nav>
+
+        <section class="view active" id="composeView">
+          <div class="content-grid">
+            <section class="composer" aria-label="内容编辑器">
+              <div class="field">
+                <label for="postTitle">主标题</label>
+                <input id="postTitle" type="text" maxlength="120" placeholder="输入这次发布的主题" />
+              </div>
+
+              <div class="field">
+                <label for="postBody">主正文</label>
+                <textarea id="postBody" rows="9" placeholder="写下要同步发布的基础内容。可以在下方为每个平台单独微调。"></textarea>
+                <div class="field-meta">
+                  <span id="charCounter">0 字</span>
+                  <span id="limitHint">请选择平台查看限制</span>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="hashtags">通用话题标签</label>
+                  <input id="hashtags" type="text" placeholder="#品牌 #新品 #活动" />
+                </div>
+                <div class="field compact-field">
+                  <label for="publishMode">发布方式</label>
+                  <select id="publishMode">
+                    <option value="now">立即发布</option>
+                    <option value="schedule">定时发布</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-row" id="scheduleRow" hidden>
+                <div class="field">
+                  <label for="scheduleDate">日期</label>
+                  <input id="scheduleDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="scheduleTime">时间</label>
+                  <input id="scheduleTime" type="time" />
+                </div>
+              </div>
+
+              <div class="upload-zone" id="uploadZone">
+                <input id="mediaInput" type="file" accept="image/*,video/*" multiple />
+                <div>
+                  <strong>添加图片或视频</strong>
+                  <span>拖放文件到这里，或点击选择媒体</span>
+                </div>
+              </div>
+              <div class="media-grid" id="mediaGrid" aria-live="polite"></div>
+
+              <section class="variant-editor" aria-label="平台变体编辑">
+                <div class="section-head">
+                  <div>
+                    <h3>平台变体</h3>
+                    <p>保留主文案，同时为每个平台做语气、标签和长度优化。</p>
+                  </div>
+                  <button class="secondary-button slim" id="syncVariantsButton" type="button">同步主文案</button>
+                </div>
+                <div class="variant-tabs" id="variantTabs"></div>
+                <div class="variant-card" id="variantCard"></div>
+              </section>
+            </section>
+
+            <section class="preview-column" aria-label="发布预览">
+              <div class="preview-card">
+                <div class="preview-top">
+                  <div class="avatar" id="previewAvatar">社</div>
+                  <div>
+                    <strong>品牌账号</strong>
+                    <span id="previewPlatform">多平台预览</span>
+                  </div>
+                </div>
+                <h3 id="previewTitle">你的标题会显示在这里</h3>
+                <p id="previewBody">正文预览会随着输入实时更新。</p>
+                <p class="preview-tags" id="previewTags"></p>
+                <div class="preview-media" id="previewMedia">媒体预览</div>
+              </div>
+
+              <div class="panel result-panel">
+                <div class="panel-head">
+                  <h2>发布队列</h2>
+                  <span class="status-pill" id="queueStatus">待发布</span>
+                </div>
+                <div class="queue-list" id="queueList"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="calendarView">
+          <div class="calendar-layout">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>本周发布日历</h2>
+                <span class="status-pill" id="calendarStatus">0 个任务</span>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>任务记录</h2>
+                <button class="icon-button" id="clearTasksButton" type="button" aria-label="清空任务" title="清空任务">×</button>
+              </div>
+              <div class="task-list" id="taskList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="analyticsView">
+          <div class="metric-grid" id="metricGrid"></div>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>平台表现模拟</h2>
+              <span class="status-pill">发布后回收数据</span>
+            </div>
+            <div class="insight-list" id="insightList"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

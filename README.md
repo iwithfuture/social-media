@@ -1,0 +1,56 @@
+# 全平台一键发布工具
+
+一个本地可运行的社媒批量发布控制台，支持统一编辑内容、按平台生成变体、账号授权管理、后端任务系统、发布日历、任务记录和数据概览。
+
+## 运行
+
+```powershell
+node server.mjs
+```
+
+然后打开：
+
+```text
+http://127.0.0.1:4173
+```
+
+## 当前能力
+
+- 统一编辑标题、正文和话题标签
+- 支持微信公众号、微博、小红书、抖音、B站动态、LinkedIn、X / Twitter、Facebook
+- 每个平台单独开关
+- 每个平台可单独调整标题、正文和话题标签
+- 支持按平台风格同步主文案
+- 支持账号授权管理：连接、断开、授权状态、token 到期时间模拟
+- 支持后端任务系统：创建排程任务、清空任务、发布任务、查询任务
+- 支持按账号授权状态判断发布结果
+- 支持立即发布和定时发布表单
+- 支持 7 天发布日历和任务记录
+- 支持账号连接率、待处理任务和平台表现模拟
+- 草稿保存到浏览器本地存储
+- 后端数据保存到 `data/store.json`
+
+## 后端 API
+
+- `GET /api/health` 健康检查
+- `GET /api/accounts` 获取账号授权状态
+- `POST /api/accounts/:platform/connect` 模拟授权账号
+- `POST /api/accounts/:platform/disconnect` 断开账号
+- `GET /api/tasks` 获取任务列表
+- `POST /api/tasks` 创建排程任务
+- `DELETE /api/tasks` 清空任务
+- `POST /api/publish` 创建发布任务并返回各平台发布结果
+- `GET /api/tasks/:id` 查询单个任务
+- `GET /api/audit-log` 查询审计日志
+
+## 下一步接真实平台
+
+现在的授权是本地模拟。真实上线时，需要把 `POST /api/accounts/:platform/connect` 替换成 OAuth 跳转和回调，把 `POST /api/publish` 里的模拟发布结果替换成各平台真实发布 API。
+
+建议下一步补：
+
+- OAuth callback：`GET /api/oauth/:platform/callback`
+- token 加密存储
+- 发布任务异步队列和重试
+- 图片裁剪、视频转码、封面设置
+- 发布失败原因和平台原始响应日志
