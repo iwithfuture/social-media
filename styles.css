@@ -780,6 +780,136 @@ select:focus {
   line-height: 1;
 }
 
+.package-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.package-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.package-intro h2 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 2vw, 28px);
+}
+
+.package-intro p:last-child {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.publish-package {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-top: 4px solid var(--package-color);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.package-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.package-head .platform-logo {
+  background: var(--package-color);
+}
+
+.package-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.package-head p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.package-section {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.package-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.package-label strong {
+  font-size: 13px;
+}
+
+.package-copy,
+.package-tags,
+.package-body {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.58;
+  overflow-wrap: anywhere;
+}
+
+.package-body {
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.package-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.package-tips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #f3f6fa;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.package-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.package-actions .primary-button,
+.package-actions .secondary-button {
+  flex: 1;
+  min-width: 110px;
+}
+
 .toast {
   position: fixed;
   right: 22px;
@@ -814,6 +944,10 @@ select:focus {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
+
+  .package-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 980px) {
@@ -837,6 +971,7 @@ select:focus {
 
   .topbar,
   .publish-actions,
+  .package-intro,
   .section-head,
   .variant-card-head {
     align-items: stretch;
@@ -861,6 +996,15 @@ select:focus {
   .field-row,
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .package-head {
+    grid-template-columns: auto 1fr;
+  }
+
+  .package-head .badge {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .connection-item,

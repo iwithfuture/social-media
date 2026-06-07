@@ -17,6 +17,8 @@ const state = {
   media: [],
   publishing: false,
   variants: {},
+  packages: {},
+  packageStatus: {},
   tasks: [],
   lastResults: [],
 };
@@ -47,10 +49,12 @@ const elements = {
   publishButton: document.querySelector("#publishButton"),
   saveDraftButton: document.querySelector("#saveDraftButton"),
   createTaskButton: document.querySelector("#createTaskButton"),
+  generatePackagesButton: document.querySelector("#generatePackagesButton"),
   syncVariantsButton: document.querySelector("#syncVariantsButton"),
   queueStatus: document.querySelector("#queueStatus"),
   variantTabs: document.querySelector("#variantTabs"),
   variantCard: document.querySelector("#variantCard"),
+  packageGrid: document.querySelector("#packageGrid"),
   calendarGrid: document.querySelector("#calendarGrid"),
   calendarStatus: document.querySelector("#calendarStatus"),
   taskList: document.querySelector("#taskList"),
@@ -392,6 +396,217 @@ function renderAnalytics() {
     .join("");
 }
 
+function renderPublishPackages() {
+  if (!elements.packageGrid) return;
+  const packages = getPublishPackages();
+  elements.packageGrid.innerHTML = packages
+    .map((item) => {
+      const done = state.packageStatus[item.id] === "published";
+      return `
+        <article class="publish-package" style="--package-color:${item.color}">
+          <div class="package-head">
+            <div class="platform-logo">${item.short}</div>
+            <div>
+              <h3>${item.name}</h3>
+              <p>${item.positioning}</p>
+            </div>
+            <span class="badge ${done ? "connected" : "pending"}">${done ? "已发布" : "待发布"}</span>
+          </div>
+
+          <div class="package-section">
+            <div class="package-label">
+              <strong>标题</strong>
+              <button class="mini-button" type="button" data-copy-package="${item.id}" data-copy-field="title">复制</button>
+            </div>
+            <p class="package-copy">${escapeHtml(item.title)}</p>
+          </div>
+
+          ${item.summary ? `
+            <div class="package-section">
+              <div class="package-label">
+                <strong>摘要</strong>
+                <button class="mini-button" type="button" data-copy-package="${item.id}" data-copy-field="summary">复制</button>
+              </div>
+              <p class="package-copy">${escapeHtml(item.summary)}</p>
+            </div>
+          ` : ""}
+
+          <div class="package-section">
+            <div class="package-label">
+              <strong>正文</strong>
+              <button class="mini-button" type="button" data-copy-package="${item.id}" data-copy-field="body">复制</button>
+            </div>
+            <pre class="package-body">${escapeHtml(item.body)}</pre>
+          </div>
+
+          <div class="package-section">
+            <div class="package-label">
+              <strong>标签 / 关键词</strong>
+              <button class="mini-button" type="button" data-copy-package="${item.id}" data-copy-field="tags">复制</button>
+            </div>
+            <p class="package-tags">${escapeHtml(item.tags)}</p>
+          </div>
+
+          <div class="package-tips">
+            ${item.tips.map((tip) => `<span>${escapeHtml(tip)}</span>`).join("")}
+          </div>
+
+          <div class="package-actions">
+            <button class="secondary-button slim" type="button" data-copy-package="${item.id}" data-copy-field="all">复制整包</button>
+            <button class="secondary-button slim" type="button" data-open-package="${item.id}">打开发布页</button>
+            <button class="primary-button slim" type="button" data-mark-package="${item.id}">${done ? "取消标记" : "标记已发布"}</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function getPublishPackages() {
+  const title = elements.postTitle.value.trim() || "这篇内容可以这样发布";
+  const body = elements.postBody.value.trim() || "先在内容编辑里写下主文章，工具会在这里生成小红书、知乎和公众号版本。";
+  const tags = normalizeTags(elements.hashtags.value) || "#内容创作 #社媒运营";
+  const paragraphs = splitParagraphs(body);
+  const keyPoints = extractKeyPoints(body);
+  return [
+    buildXhsPackage(title, paragraphs, keyPoints, tags),
+    buildZhihuPackage(title, paragraphs, keyPoints, tags),
+    buildWechatPackage(title, paragraphs, keyPoints, tags),
+  ];
+}
+
+function buildXhsPackage(title, paragraphs, keyPoints, tags) {
+  const hook = makeShortTitle(title, 20);
+  const bullets = keyPoints.slice(0, 5).map((point, index) => `${index + 1}. ${point}`).join("\n");
+  const body = [
+    `先说结论：${paragraphs[0] || title}`,
+    "",
+    bullets || paragraphs.slice(0, 4).map((item, index) => `${index + 1}. ${item}`).join("\n"),
+    "",
+    "适合收藏，发布前可以配 3-6 张图：封面图、步骤图、结果图、对比图。",
+    "",
+    "你会更想看哪一部分？评论区告诉我。"
+  ].join("\n");
+  return {
+    id: "xiaohongshu",
+    name: "小红书",
+    short: "红",
+    color: "#e11d48",
+    positioning: "短标题、强钩子、分点、标签更重要",
+    title: `${hook}｜建议收藏`,
+    body,
+    tags: mergeTags(tags, ["#小红书运营", "#内容创作", "#干货分享"]),
+    tips: ["封面标题控制在 12 字内", "正文前 3 行要给结论", "标签保留 5-8 个"],
+    url: "https://creator.xiaohongshu.com/publish/publish"
+  };
+}
+
+function buildZhihuPackage(title, paragraphs, keyPoints, tags) {
+  const lead = paragraphs[0] || title;
+  const body = [
+    `我会从三个角度回答这个问题。`,
+    "",
+    `## 背景`,
+    lead,
+    "",
+    `## 核心观点`,
+    keyPoints.slice(0, 4).map((point, index) => `${index + 1}. ${point}`).join("\n") || paragraphs.slice(0, 4).join("\n\n"),
+    "",
+    `## 为什么这件事值得做`,
+    "真正麻烦的地方往往不是发布按钮，而是同一份内容在不同平台要换表达方式、结构和读者预期。",
+    "",
+    `## 结论`,
+    "我的建议是先把主内容写完整，再按平台生成不同版本，最后人工确认发布。这样既稳，也能明显减少重复劳动。"
+  ].join("\n");
+  return {
+    id: "zhihu",
+    name: "知乎",
+    short: "知",
+    color: "#1772f6",
+    positioning: "观点清晰、解释充分、减少营销感",
+    title: title.endsWith("？") ? title : `${title}，我的实际看法是什么？`,
+    body,
+    tags: mergeTags(tags, ["内容创作", "新媒体运营", "效率工具"]).replaceAll("#", ""),
+    tips: ["适合发文章或回答", "标题可以问题化", "正文保留论证和反例"],
+    url: "https://www.zhihu.com/creator"
+  };
+}
+
+function buildWechatPackage(title, paragraphs, keyPoints, tags) {
+  const summary = makeSummary(paragraphs);
+  const body = [
+    `# ${title}`,
+    "",
+    summary,
+    "",
+    `## 一、为什么要做这件事`,
+    paragraphs[0] || "很多内容工作不是难在创作，而是难在多平台重复改写。",
+    "",
+    `## 二、可以怎么处理`,
+    keyPoints.slice(0, 5).map((point, index) => `${index + 1}. ${point}`).join("\n") || paragraphs.slice(0, 5).join("\n\n"),
+    "",
+    `## 三、发布前检查`,
+    "- 标题是否清楚\n- 摘要是否完整\n- 封面图是否匹配主题\n- 正文是否适合公众号阅读\n- 结尾是否有下一步行动",
+    "",
+    `## 结尾`,
+    "如果这篇内容对你有帮助，可以收藏备用。后续我会继续把流程拆得更细。"
+  ].join("\n");
+  return {
+    id: "wechat",
+    name: "微信公众号",
+    short: "微",
+    color: "#16a34a",
+    positioning: "长文结构、摘要、标题和封面更重要",
+    title,
+    summary,
+    body,
+    tags: mergeTags(tags, ["#公众号", "#新媒体", "#内容运营"]),
+    tips: ["可复制 Markdown 到编辑器", "封面建议 2.35:1", "摘要控制在 120 字以内"],
+    url: "https://mp.weixin.qq.com/"
+  };
+}
+
+function splitParagraphs(value) {
+  return value
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function extractKeyPoints(value) {
+  const lines = value
+    .split(/\n+/)
+    .map((item) => item.replace(/^[-*#\d.、\s]+/, "").trim())
+    .filter((item) => item.length >= 8);
+  return lines.length ? lines : splitSentences(value).slice(0, 5);
+}
+
+function splitSentences(value) {
+  return value
+    .split(/[。！？!?；;]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 8);
+}
+
+function makeShortTitle(value, maxLength) {
+  const clean = value.replace(/[，。！？!?、]/g, " ").trim();
+  return clean.length > maxLength ? `${clean.slice(0, maxLength)}...` : clean;
+}
+
+function makeSummary(paragraphs) {
+  const source = paragraphs.join(" ").trim();
+  if (!source) return "这篇文章整理了一个更省力的多平台发布流程。";
+  return source.length > 118 ? `${source.slice(0, 118)}...` : source;
+}
+
+function mergeTags(base, additions) {
+  const tags = `${base} ${additions.join(" ")}`
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return [...new Set(tags)].join(" ");
+}
+
 function buildTaskPayload() {
   const now = new Date();
   const date = elements.publishMode.value === "schedule" ? elements.scheduleDate.value : formatDateKey(now);
@@ -433,6 +648,7 @@ function refresh() {
   renderVariantTabs();
   updatePreview();
   renderQueue();
+  renderPublishPackages();
   renderCalendar();
   renderAnalytics();
 }
@@ -528,6 +744,74 @@ async function updateAccount(platformId, action) {
   }
 }
 
+async function copyPackageField(packageId, field) {
+  const item = getPublishPackages().find((entry) => entry.id === packageId);
+  if (!item) return;
+
+  const text = field === "all"
+    ? formatPackageForCopy(item)
+    : item[field] || "";
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(`${item.name}${field === "all" ? "发布包" : fieldLabel(field)}已复制。`);
+  } catch {
+    fallbackCopy(text);
+    showToast(`${item.name}${field === "all" ? "发布包" : fieldLabel(field)}已复制。`);
+  }
+}
+
+function openPackagePage(packageId) {
+  const item = getPublishPackages().find((entry) => entry.id === packageId);
+  if (!item) return;
+  window.open(item.url, "_blank", "noopener,noreferrer");
+}
+
+function togglePackagePublished(packageId) {
+  state.packageStatus[packageId] = state.packageStatus[packageId] === "published" ? "draft" : "published";
+  renderPublishPackages();
+  saveDraft();
+  showToast(`${platformName(packageId)}发布状态已更新。`);
+}
+
+function formatPackageForCopy(item) {
+  return [
+    `【${item.name}】`,
+    "",
+    `标题：${item.title}`,
+    item.summary ? `摘要：${item.summary}` : "",
+    "",
+    "正文：",
+    item.body,
+    "",
+    `标签 / 关键词：${item.tags}`,
+    "",
+    `发布提示：${item.tips.join("；")}`,
+  ].filter(Boolean).join("\n");
+}
+
+function fieldLabel(field) {
+  const map = {
+    title: "标题",
+    summary: "摘要",
+    body: "正文",
+    tags: "标签",
+  };
+  return map[field] || "内容";
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 async function loadBackendState() {
   try {
     const [{ accounts }, { tasks }] = await Promise.all([
@@ -549,6 +833,7 @@ function saveDraft() {
     selected: [...state.selected],
     activeVariant: state.activeVariant,
     variants: state.variants,
+    packageStatus: state.packageStatus,
     publishMode: elements.publishMode.value,
     scheduleDate: elements.scheduleDate.value,
     scheduleTime: elements.scheduleTime.value,
@@ -573,6 +858,7 @@ function loadDraft() {
     state.selected = new Set(draft.selected || platforms.map((platform) => platform.id));
     state.activeVariant = draft.activeVariant || "wechat";
     state.variants = draft.variants || {};
+    state.packageStatus = draft.packageStatus || {};
     elements.scheduleRow.hidden = elements.publishMode.value !== "schedule";
   } catch {
     localStorage.removeItem("socialPublisherDraft");
@@ -608,6 +894,28 @@ function bindEvents() {
     refresh();
   });
 
+  if (elements.packageGrid) {
+    elements.packageGrid.addEventListener("click", (event) => {
+      const copyButton = event.target.closest("[data-copy-package]");
+      const openButton = event.target.closest("[data-open-package]");
+      const markButton = event.target.closest("[data-mark-package]");
+
+      if (copyButton) {
+        copyPackageField(copyButton.dataset.copyPackage, copyButton.dataset.copyField);
+        return;
+      }
+
+      if (openButton) {
+        openPackagePage(openButton.dataset.openPackage);
+        return;
+      }
+
+      if (markButton) {
+        togglePackagePublished(markButton.dataset.markPackage);
+      }
+    });
+  }
+
   document.querySelectorAll(".tab").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.remove("active"));
@@ -624,6 +932,14 @@ function bindEvents() {
   elements.publishMode.addEventListener("change", () => {
     elements.scheduleRow.hidden = elements.publishMode.value !== "schedule";
   });
+
+  if (elements.generatePackagesButton) {
+    elements.generatePackagesButton.addEventListener("click", () => {
+      state.packages = Object.fromEntries(getPublishPackages().map((item) => [item.id, item]));
+      renderPublishPackages();
+      showToast("已生成小红书、知乎、公众号发布包。");
+    });
+  }
 
   elements.syncVariantsButton.addEventListener("click", () => {
     selectedPlatforms().forEach((platform) => {

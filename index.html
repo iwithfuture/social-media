@@ -50,6 +50,7 @@
 
         <nav class="tabs" aria-label="工作区视图">
           <button class="tab active" type="button" data-view="compose">内容编辑</button>
+          <button class="tab" type="button" data-view="packages">发布包</button>
           <button class="tab" type="button" data-view="calendar">发布日历</button>
           <button class="tab" type="button" data-view="analytics">数据概览</button>
         </nav>
@@ -141,6 +142,20 @@
                 <div class="queue-list" id="queueList"></div>
               </div>
             </section>
+          </div>
+        </section>
+
+        <section class="view" id="packagesView">
+          <div class="package-layout">
+            <section class="panel package-intro">
+              <div>
+                <p class="eyebrow">Publishing Kits</p>
+                <h2>小红书 / 知乎 / 公众号发布包</h2>
+                <p>主文章只写一次，工具自动整理成三个平台的标题、正文、标签和发布步骤。你复制后到对应平台人工确认发布。</p>
+              </div>
+              <button class="primary-button" id="generatePackagesButton" type="button">生成三平台版本</button>
+            </section>
+            <div class="package-grid" id="packageGrid"></div>
           </div>
         </section>
 
