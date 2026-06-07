@@ -86,6 +86,17 @@
                 </div>
               </div>
 
+              <section class="asset-editor" aria-label="文章链接">
+                <div class="section-head">
+                  <div>
+                    <h3>文章链接</h3>
+                    <p>添加参考链接、产品页或延伸阅读，生成发布包时会自动带上。</p>
+                  </div>
+                  <button class="secondary-button slim" id="addLinkButton" type="button">添加链接</button>
+                </div>
+                <div class="link-list" id="linkList"></div>
+              </section>
+
               <div class="field-row" id="scheduleRow" hidden>
                 <div class="field">
                   <label for="scheduleDate">日期</label>
@@ -105,6 +116,7 @@
                 </div>
               </div>
               <div class="media-grid" id="mediaGrid" aria-live="polite"></div>
+              <div class="media-note-list" id="mediaNoteList"></div>
 
               <section class="variant-editor" aria-label="平台变体编辑">
                 <div class="section-head">

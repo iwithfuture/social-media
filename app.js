@@ -15,6 +15,7 @@ const state = {
   activeVariant: "wechat",
   accounts: {},
   media: [],
+  links: [],
   publishing: false,
   variants: {},
   packages: {},
@@ -40,6 +41,9 @@ const elements = {
   mediaInput: document.querySelector("#mediaInput"),
   uploadZone: document.querySelector("#uploadZone"),
   mediaGrid: document.querySelector("#mediaGrid"),
+  mediaNoteList: document.querySelector("#mediaNoteList"),
+  addLinkButton: document.querySelector("#addLinkButton"),
+  linkList: document.querySelector("#linkList"),
   previewAvatar: document.querySelector("#previewAvatar"),
   previewPlatform: document.querySelector("#previewPlatform"),
   previewTitle: document.querySelector("#previewTitle"),
@@ -447,6 +451,24 @@ function renderPublishPackages() {
             <p class="package-tags">${escapeHtml(item.tags)}</p>
           </div>
 
+          ${item.mediaNotes?.length ? `
+            <div class="package-section">
+              <div class="package-label">
+                <strong>图片说明</strong>
+              </div>
+              <p class="package-copy">${escapeHtml(item.mediaNotes.map((note, index) => `图 ${index + 1}：${note}`).join("\n"))}</p>
+            </div>
+          ` : ""}
+
+          ${item.links?.length ? `
+            <div class="package-section">
+              <div class="package-label">
+                <strong>链接</strong>
+              </div>
+              <p class="package-copy">${escapeHtml(formatLinksForBody(item.links))}</p>
+            </div>
+          ` : ""}
+
           <div class="package-tips">
             ${item.tips.map((tip) => `<span>${escapeHtml(tip)}</span>`).join("")}
           </div>
@@ -468,14 +490,16 @@ function getPublishPackages() {
   const tags = normalizeTags(elements.hashtags.value) || "#内容创作 #社媒运营";
   const paragraphs = splitParagraphs(body);
   const keyPoints = extractKeyPoints(body);
+  const mediaNotes = getMediaNotes();
+  const links = getValidLinks();
   return [
-    buildXhsPackage(title, paragraphs, keyPoints, tags),
-    buildZhihuPackage(title, paragraphs, keyPoints, tags),
-    buildWechatPackage(title, paragraphs, keyPoints, tags),
+    buildXhsPackage(title, paragraphs, keyPoints, tags, mediaNotes, links),
+    buildZhihuPackage(title, paragraphs, keyPoints, tags, mediaNotes, links),
+    buildWechatPackage(title, paragraphs, keyPoints, tags, mediaNotes, links),
   ];
 }
 
-function buildXhsPackage(title, paragraphs, keyPoints, tags) {
+function buildXhsPackage(title, paragraphs, keyPoints, tags, mediaNotes, links) {
   const hook = makeShortTitle(title, 20);
   const bullets = keyPoints.slice(0, 5).map((point, index) => `${index + 1}. ${point}`).join("\n");
   const body = [
@@ -483,10 +507,11 @@ function buildXhsPackage(title, paragraphs, keyPoints, tags) {
     "",
     bullets || paragraphs.slice(0, 4).map((item, index) => `${index + 1}. ${item}`).join("\n"),
     "",
-    "适合收藏，发布前可以配 3-6 张图：封面图、步骤图、结果图、对比图。",
+    mediaNotes.length ? `配图建议：\n${mediaNotes.map((item, index) => `${index + 1}. ${item}`).join("\n")}` : "适合收藏，发布前可以配 3-6 张图：封面图、步骤图、结果图、对比图。",
+    links.length ? `\n补充链接：${links.map((link) => link.title).join(" / ")}。小红书正文不适合放长链接，建议放在评论区或主页。` : "",
     "",
     "你会更想看哪一部分？评论区告诉我。"
-  ].join("\n");
+  ].filter(Boolean).join("\n");
   return {
     id: "xiaohongshu",
     name: "小红书",
@@ -496,12 +521,14 @@ function buildXhsPackage(title, paragraphs, keyPoints, tags) {
     title: `${hook}｜建议收藏`,
     body,
     tags: mergeTags(tags, ["#小红书运营", "#内容创作", "#干货分享"]),
+    links,
+    mediaNotes,
     tips: ["封面标题控制在 12 字内", "正文前 3 行要给结论", "标签保留 5-8 个"],
     url: "https://creator.xiaohongshu.com/publish/publish"
   };
 }
 
-function buildZhihuPackage(title, paragraphs, keyPoints, tags) {
+function buildZhihuPackage(title, paragraphs, keyPoints, tags, mediaNotes, links) {
   const lead = paragraphs[0] || title;
   const body = [
     `我会从三个角度回答这个问题。`,
@@ -514,10 +541,12 @@ function buildZhihuPackage(title, paragraphs, keyPoints, tags) {
     "",
     `## 为什么这件事值得做`,
     "真正麻烦的地方往往不是发布按钮，而是同一份内容在不同平台要换表达方式、结构和读者预期。",
+    links.length ? `\n## 参考链接\n${formatLinksForBody(links)}` : "",
+    mediaNotes.length ? `\n## 配图说明\n${mediaNotes.map((item, index) => `${index + 1}. ${item}`).join("\n")}` : "",
     "",
     `## 结论`,
     "我的建议是先把主内容写完整，再按平台生成不同版本，最后人工确认发布。这样既稳，也能明显减少重复劳动。"
-  ].join("\n");
+  ].filter(Boolean).join("\n");
   return {
     id: "zhihu",
     name: "知乎",
@@ -527,12 +556,14 @@ function buildZhihuPackage(title, paragraphs, keyPoints, tags) {
     title: title.endsWith("？") ? title : `${title}，我的实际看法是什么？`,
     body,
     tags: mergeTags(tags, ["内容创作", "新媒体运营", "效率工具"]).replaceAll("#", ""),
+    links,
+    mediaNotes,
     tips: ["适合发文章或回答", "标题可以问题化", "正文保留论证和反例"],
     url: "https://www.zhihu.com/creator"
   };
 }
 
-function buildWechatPackage(title, paragraphs, keyPoints, tags) {
+function buildWechatPackage(title, paragraphs, keyPoints, tags, mediaNotes, links) {
   const summary = makeSummary(paragraphs);
   const body = [
     `# ${title}`,
@@ -547,10 +578,12 @@ function buildWechatPackage(title, paragraphs, keyPoints, tags) {
     "",
     `## 三、发布前检查`,
     "- 标题是否清楚\n- 摘要是否完整\n- 封面图是否匹配主题\n- 正文是否适合公众号阅读\n- 结尾是否有下一步行动",
+    mediaNotes.length ? `\n## 配图位置建议\n${mediaNotes.map((item, index) => `- 图 ${index + 1}：${item}`).join("\n")}` : "",
+    links.length ? `\n## 延伸阅读\n${formatLinksForBody(links)}` : "",
     "",
     `## 结尾`,
     "如果这篇内容对你有帮助，可以收藏备用。后续我会继续把流程拆得更细。"
-  ].join("\n");
+  ].filter(Boolean).join("\n");
   return {
     id: "wechat",
     name: "微信公众号",
@@ -561,6 +594,8 @@ function buildWechatPackage(title, paragraphs, keyPoints, tags) {
     summary,
     body,
     tags: mergeTags(tags, ["#公众号", "#新媒体", "#内容运营"]),
+    links,
+    mediaNotes,
     tips: ["可复制 Markdown 到编辑器", "封面建议 2.35:1", "摘要控制在 120 字以内"],
     url: "https://mp.weixin.qq.com/"
   };
@@ -607,6 +642,25 @@ function mergeTags(base, additions) {
   return [...new Set(tags)].join(" ");
 }
 
+function getMediaNotes() {
+  return state.media
+    .map((file, index) => file.caption?.trim() || `${index === 0 ? "封面图" : `配图 ${index + 1}`}：${file.name}`)
+    .filter(Boolean);
+}
+
+function getValidLinks() {
+  return state.links
+    .map((link) => ({
+      title: link.title.trim() || link.url.trim(),
+      url: link.url.trim(),
+    }))
+    .filter((link) => link.url);
+}
+
+function formatLinksForBody(links) {
+  return links.map((link, index) => `${index + 1}. ${link.title}：${link.url}`).join("\n");
+}
+
 function buildTaskPayload() {
   const now = new Date();
   const date = elements.publishMode.value === "schedule" ? elements.scheduleDate.value : formatDateKey(now);
@@ -645,6 +699,7 @@ function validatePost() {
 
 function refresh() {
   updateTextMeta();
+  renderLinks();
   renderVariantTabs();
   updatePreview();
   renderQueue();
@@ -785,6 +840,8 @@ function formatPackageForCopy(item) {
     item.body,
     "",
     `标签 / 关键词：${item.tags}`,
+    item.mediaNotes?.length ? `\n图片说明：\n${item.mediaNotes.map((note, index) => `${index + 1}. ${note}`).join("\n")}` : "",
+    item.links?.length ? `\n链接：\n${formatLinksForBody(item.links)}` : "",
     "",
     `发布提示：${item.tips.join("；")}`,
   ].filter(Boolean).join("\n");
@@ -830,6 +887,7 @@ function saveDraft() {
     title: elements.postTitle.value,
     body: elements.postBody.value,
     hashtags: elements.hashtags.value,
+    links: state.links,
     selected: [...state.selected],
     activeVariant: state.activeVariant,
     variants: state.variants,
@@ -852,6 +910,7 @@ function loadDraft() {
     elements.postTitle.value = draft.title || "";
     elements.postBody.value = draft.body || "";
     elements.hashtags.value = draft.hashtags || "";
+    state.links = Array.isArray(draft.links) ? draft.links : [];
     elements.publishMode.value = draft.publishMode || "now";
     elements.scheduleDate.value = draft.scheduleDate || "";
     elements.scheduleTime.value = draft.scheduleTime || "";
@@ -879,6 +938,31 @@ function bindEvents() {
     if (!button) return;
     updateAccount(button.dataset.platform, button.dataset.accountAction);
   });
+
+  if (elements.addLinkButton) {
+    elements.addLinkButton.addEventListener("click", () => {
+      state.links.push({ title: "", url: "" });
+      renderLinks();
+    });
+  }
+
+  if (elements.linkList) {
+    elements.linkList.addEventListener("input", (event) => {
+      const titleIndex = event.target.dataset.linkTitle;
+      const urlIndex = event.target.dataset.linkUrl;
+      if (titleIndex !== undefined) state.links[Number(titleIndex)].title = event.target.value;
+      if (urlIndex !== undefined) state.links[Number(urlIndex)].url = event.target.value;
+      renderPublishPackages();
+    });
+
+    elements.linkList.addEventListener("click", (event) => {
+      const removeIndex = event.target.dataset.removeLink;
+      if (removeIndex === undefined) return;
+      state.links.splice(Number(removeIndex), 1);
+      renderLinks();
+      renderPublishPackages();
+    });
+  }
 
   elements.selectAllButton.addEventListener("click", () => {
     const allSelected = state.selected.size === platforms.length;
@@ -959,10 +1043,21 @@ function bindEvents() {
       name: file.name,
       type: file.type,
       url: URL.createObjectURL(file),
+      caption: "",
     }));
     renderMedia();
     updatePreview();
+    renderPublishPackages();
   });
+
+  if (elements.mediaNoteList) {
+    elements.mediaNoteList.addEventListener("input", (event) => {
+      const index = event.target.dataset.mediaCaption;
+      if (index === undefined || !state.media[Number(index)]) return;
+      state.media[Number(index)].caption = event.target.value;
+      renderPublishPackages();
+    });
+  }
 
   elements.uploadZone.addEventListener("dragover", (event) => event.preventDefault());
   elements.uploadZone.addEventListener("drop", (event) => {
@@ -1011,6 +1106,39 @@ function renderMedia() {
       return `<div class="media-thumb" title="${escapeAttribute(file.name)}" data-media="${index}">${preview}</div>`;
     })
     .join("");
+  renderMediaNotes();
+}
+
+function renderMediaNotes() {
+  if (!elements.mediaNoteList) return;
+  elements.mediaNoteList.innerHTML = state.media.length
+    ? state.media
+        .map((file, index) => `
+          <div class="media-note-item">
+            <div>
+              <strong>图 ${index + 1}</strong>
+              <span>${escapeHtml(file.name)}</span>
+            </div>
+            <input type="text" value="${escapeAttribute(file.caption || "")}" data-media-caption="${index}" placeholder="说明用途，例如：封面图 / 步骤图 / 结果图" />
+          </div>
+        `)
+        .join("")
+    : "";
+}
+
+function renderLinks() {
+  if (!elements.linkList) return;
+  elements.linkList.innerHTML = state.links.length
+    ? state.links
+        .map((link, index) => `
+          <div class="link-item" data-link-item="${index}">
+            <input type="text" value="${escapeAttribute(link.title || "")}" data-link-title="${index}" placeholder="链接标题，例如：产品官网" />
+            <input type="url" value="${escapeAttribute(link.url || "")}" data-link-url="${index}" placeholder="https://example.com" />
+            <button class="icon-button" type="button" data-remove-link="${index}" aria-label="删除链接" title="删除链接">×</button>
+          </div>
+        `)
+        .join("")
+    : '<div class="empty-helper">还没有链接。可以添加产品页、参考资料或延伸阅读。</div>';
 }
 
 function tailorBodyForPlatform(platform, body) {

@@ -525,6 +525,48 @@ select:focus {
   object-fit: cover;
 }
 
+.asset-editor {
+  margin: 4px 0 16px;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.link-list,
+.media-note-list {
+  display: grid;
+  gap: 10px;
+}
+
+.link-item,
+.media-note-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(180px, 1.2fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.media-note-item {
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  margin-bottom: 10px;
+}
+
+.media-note-item > div {
+  display: grid;
+  gap: 2px;
+}
+
+.media-note-item strong {
+  font-size: 13px;
+}
+
+.media-note-item span,
+.empty-helper {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .variant-editor {
   margin-top: 18px;
   padding-top: 18px;
@@ -873,6 +915,10 @@ select:focus {
   overflow-wrap: anywhere;
 }
 
+.package-copy {
+  white-space: pre-wrap;
+}
+
 .package-body {
   max-height: 300px;
   overflow: auto;
@@ -995,6 +1041,11 @@ select:focus {
 
   .field-row,
   .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .link-item,
+  .media-note-item {
     grid-template-columns: 1fr;
   }
 
